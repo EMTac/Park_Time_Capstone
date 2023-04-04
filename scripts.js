@@ -184,7 +184,7 @@ var timeMapButton = L.easyButton('fa-clock', function(btn, map) {
     }
   
     // add all difference polygons to the map at once
-    var differencePolygonGroup = L.layerGroup(differencePolygons).addTo(map);
+    differencePolygonGroup = L.layerGroup(differencePolygons).addTo(map);
   
     var groupBounds = L.featureGroup(differencePolygons).getBounds();
     map.fitBounds(groupBounds);
