@@ -1,5 +1,10 @@
+// Access token for mapbox API
 const accessToken = 'pk.eyJ1IjoiZW10YWMiLCJhIjoiY2w5ejR0bXZyMGJpbDNvbG5jMTFobGJlZCJ9.UMi2J2LPPuz0qbFaCh0uRA';    
-
+// App ID for TravelTime Isochrone generator
+const APPLICATION_ID = "7cf7cc27"
+// Application Key for TravelTime isochrone generator
+const API_KEY = "0874bc9fae906324041167cb3348c66b"
+// Creating tilemap for light theme
 var light = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
     attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
     maxZoom: 18,
@@ -9,6 +14,7 @@ var light = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}
     zoomOffset: -1,
 });
 
+// Creating tilemap for dark theme
 var dark = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
     attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
     maxZoom: 18,
@@ -18,27 +24,193 @@ var dark = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?
     zoomOffset: -1,
 });
 
+// Creating map object and setting initial view
 const map = L.map('map', {layers:[light]})
 
 map.on('load', onMapLoad);
 map.fitWorld();
 map.setView([47.22, -120.97], 8);
 
+// Adding light and dark tilemaps as basemaps
 var baseMaps = {
     "Light Theme": light,
     "Dark Theme": dark
 };
 
+// Creating custom icon to mark user-specified location
+var LeafIcon = L.Icon.extend({
+    options: {
+        iconUrl: 'resources/red-marker.png',
+        shadowUrl: 'resources/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+    }
+});
+
+var redIcon = new LeafIcon;
+
+// Creating layergroup to store marker. This allows the layergroup to be cleared when the user chooses a new location
+const layerGroup = L.layerGroup();
+
+var activeMarker;
+
+// Using leaflet-control-geocoder plugin to add geocoding function to map. Search results limited to Washington
 var geocoder = L.Control.geocoder({
+    defaultMarkGeocode: false,
     placeholder: "Find an Address in Washington",
     collapsed: false,
     geocoder: new L.Control.Geocoder.Nominatim({
         geocodingQueryParams: {"viewbox": "-124.80854040819138, 45.15013696014261, -116.6733582340411, 49.08335516894325", "bounded": "1"},
     })
-}).addTo(map); 
+})
+// When a geocoding result is produced, a custom icon is created and can be adjusted by the user
+    .on('markgeocode', function(e) {
+        layerGroup.clearLayers();
+        var latlng = e.geocode.center;
+        activeMarker = new L.marker(latlng, {
+            icon: redIcon,
+            draggable: true
+                })
+                .bindTooltip("Drag me to update the location")
+                .bindPopup(e.geocode.name + "<br>" + "Lat: " + latlng.lat.toFixed(4) + "<br>Lng: " + latlng.lng.toFixed(4))
+                .addTo(layerGroup)
+                .on('dragend', onDragEnd);
+        map.setView(latlng, 16);
+        map.addLayer(layerGroup);
+        activeMarker.openPopup();
+    }).addTo(map);
+// When the custom icon is moved, this function updates the popup to include the current coordinates
+function onDragEnd(e) {
+    var activeMarker = e.target;
+    var latlng = activeMarker.getLatLng();
+    activeMarker.bindPopup("Lat: " + latlng.lat.toFixed(4) + "<br>Lng: " + latlng.lng.toFixed(4)).openPopup();
+}
+
+// When the map is right clicked, this listener creates a custom marker and updates the popup with the current location
+map.on('contextmenu', function(e){
+    var latlng = e.latlng;
+    layerGroup.clearLayers();
+    activeMarker = new L.marker(latlng, {
+        icon: redIcon,
+        draggable: true
+            })
+            .bindTooltip("Drag me to update the location")
+            .bindPopup("Lat: " + latlng.lat.toFixed(4) + "<br>Lng: " + latlng.lng.toFixed(4))
+            .addTo(layerGroup)
+            .on('dragend', onDragEnd);
+    map.addLayer(layerGroup);
+    activeMarker.openPopup();
+});
+
+var timeMapButton = L.easyButton('fa-clock', function(btn, map) {
+    if (activeMarker) {
+      sendTimeMapRequest(activeMarker.getLatLng());
+    }
+  }).setPosition('topright');
+  
+  timeMapButton.addTo(map);
+
+  var differencePolygonGroup = L.layerGroup().addTo(map);
+
+  async function sendTimeMapRequest() {
+
+    differencePolygonGroup.clearLayers();
+    
+    // The request for Time Map. Reference: http://docs.traveltimeplatform.com/reference/time-map/
+    var latLng = { lng: activeMarker.getLatLng().lng, lat: activeMarker.getLatLng().lat };
+    var travelTimes = [15 * 60, 30 * 60, 45 * 60, 120 * 60];
+  
+    var colors = ['#248f24', '#ace600', '#e6b800', '#e62e00'];
+  
+    var polygons = []; // empty array to hold all polygons
+  
+    for (var i = 0; i < travelTimes.length; i++) {
+      var request = {
+        departure_searches: [{
+          id: "first_location",
+          coords: latLng,
+          transportation: {
+            type: "driving"
+          },
+  
+          departure_time: new Date,
+          travel_time: travelTimes[i],
+        }],
+  
+        arrival_searches: []
+      };
+  
+      try {
+        const response = await fetch("https://api.traveltimeapp.com/v4/time-map", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Application-Id": APPLICATION_ID,
+            "X-Api-Key": API_KEY,
+          },
+          body: JSON.stringify(request),
+        });
+  
+        if (response.ok) {
+          const data = await response.json();
+          const polygon = drawTimeMap(data, colors[i]);
+          polygons.push(polygon);
+        } else {
+          throw new Error("Network response was not ok.");
+        }
+      } catch (error) {
+        console.error("Error:", error);
+      }
+    }
+  
+    // create the new polygon group with difference polygons
+    var differencePolygons = [polygons[0]];
+    for (var i = 1; i < polygons.length; i++) {
+      var prevPolygon = polygons[i - 1];
+      var currentPolygon = polygons[i];
+      var diff = turf.difference(currentPolygon.toGeoJSON(), prevPolygon.toGeoJSON());
+      var differencePolygon = L.geoJSON(diff, {
+        style: function (feature) {
+          return {
+            color: colors[i],
+            weight: 0,
+            fillOpacity: 0.5
+          }
+        }
+      });
+      differencePolygons.push(differencePolygon);
+    }
+  
+    // add all difference polygons to the map at once
+    var differencePolygonGroup = L.layerGroup(differencePolygons).addTo(map);
+  
+    var groupBounds = L.featureGroup(differencePolygons).getBounds();
+    map.fitBounds(groupBounds);
+  };
+  
+  function ringCoordsHashToArray(ring) {
+    return ring.map(function (latLng) {
+      return [latLng.lat, latLng.lng];
+    });
+  }
+  
+  function drawTimeMap(response, color) {
+  
+    // Reference for the response: http://docs.traveltimeplatform.com/reference/time-map/#response-body-json-attributes
+    var shapesCoords = response.results[0].shapes.map(function (polygon) {
+      var shell = ringCoordsHashToArray(polygon.shell);
+      var holes = polygon.holes.map(ringCoordsHashToArray);
+      return [shell].concat(holes);
+    });
+    return L.polygon(shapesCoords, { color: color, weight: 0 });
+  };
+
+// Light and dark theme can be toggled manually
 var layerControl = L.control.layers(baseMaps).addTo(map);
 
-
+// When the map loads, the Suncalc plugin gets the current date and time in Washington and chooses light or dark theme depending on the current light level
 function onMapLoad() {
 var times = SunCalc.getTimes(new Date(), 47.22, -121.17);
         var sunrise = times.sunrise.getHours();
@@ -55,6 +227,7 @@ var times = SunCalc.getTimes(new Date(), 47.22, -121.17);
             }
 };
 
+// Custom styling for the parks layer
 var myStyle = {
     "color": "#4da343",
     "weight": 0,
@@ -62,12 +235,14 @@ var myStyle = {
     "fillOpacity": 0.5,
 };
 
+// Parks GeoJSON is added to the map with custom styling on appropriate popups for each feature
 var testLayer = L.geoJSON(State_Parks, {
     onEachFeature: onEachFeature,
     boundary: { weight: 0 },
     style: myStyle,
 }).addTo(map);
 
+// This function uses the current date and time in Washington to determine if parks in the parks GeoJSON are open or closed, then adjusts their symbology and popups to communicate this to the user
 function onEachFeature(feature, layer) {
     if (!feature.properties.Open_Date || feature.properties.Open_Date === null) {
         feature.properties.status = "open";
@@ -133,4 +308,3 @@ if (feature.properties.status === "open") {
     layer.setStyle({fillOpacity: 0.4, color: "#c22134"});
 }
 }
-
