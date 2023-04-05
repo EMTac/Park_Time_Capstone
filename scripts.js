@@ -57,30 +57,30 @@ const layerGroup = L.layerGroup();
 var activeMarker;
 
 // Using leaflet-control-geocoder plugin to add geocoding function to map. Search results limited to Washington
-// var geocoder = L.Control.geocoder({
-//     defaultMarkGeocode: false,
-//     placeholder: "Find an Address in Washington",
-//     collapsed: false,
-//     geocoder: new L.Control.Geocoder.Nominatim({
-//         geocodingQueryParams: {"viewbox": "-124.80854040819138, 45.15013696014261, -116.6733582340411, 49.08335516894325", "bounded": "1"},
-//     })
-// })
-// // When a geocoding result is produced, a custom icon is created and can be adjusted by the user
-//     .on('markgeocode', function(e) {
-//         layerGroup.clearLayers();
-//         var latlng = e.geocode.center;
-//         activeMarker = new L.marker(latlng, {
-//             icon: redIcon,
-//             draggable: true
-//                 })
-//                 .bindTooltip("Drag me to update the location")
-//                 .bindPopup(e.geocode.name + "<br>" + "Lat: " + latlng.lat.toFixed(4) + "<br>Lng: " + latlng.lng.toFixed(4))
-//                 .addTo(layerGroup)
-//                 .on('dragend', onDragEnd);
-//         map.setView(latlng, 16);
-//         map.addLayer(layerGroup);
-//         activeMarker.openPopup();
-//     }).addTo(map);
+var geocoder = L.Control.geocoder({
+    defaultMarkGeocode: false,
+    placeholder: "Find an Address in Washington",
+    collapsed: false,
+    geocoder: new L.Control.Geocoder.Nominatim({
+        geocodingQueryParams: {"viewbox": "-124.80854040819138, 45.15013696014261, -116.6733582340411, 49.08335516894325", "bounded": "1"},
+    })
+})
+// When a geocoding result is produced, a custom icon is created and can be adjusted by the user
+    .on('markgeocode', function(e) {
+        layerGroup.clearLayers();
+        var latlng = e.geocode.center;
+        activeMarker = new L.marker(latlng, {
+            icon: redIcon,
+            draggable: true
+                })
+                .bindTooltip("Drag me to update the location")
+                .bindPopup(e.geocode.name + "<br>" + "Lat: " + latlng.lat.toFixed(4) + "<br>Lng: " + latlng.lng.toFixed(4))
+                .addTo(layerGroup)
+                .on('dragend', onDragEnd);
+        map.setView(latlng, 16);
+        map.addLayer(layerGroup);
+        activeMarker.openPopup();
+    }).addTo(map);
 // // When the custom icon is moved, this function updates the popup to include the current coordinates
 function onDragEnd(e) {
     var activeMarker = e.target;
@@ -123,7 +123,7 @@ var timeMapButton = L.easyButton('fa-clock', function(btn, map) {
     var latLng = { lng: activeMarker.getLatLng().lng, lat: activeMarker.getLatLng().lat };
     var travelTimes = [5 * 60, 10 * 60, 15 * 60, 20 * 60];
   
-    var colors = ['#248f24', '#ace600', '#e6b800', '#e62e00'];
+    var colors = ['#04d66d', '#3BCA6D', '#77945C', '#B25F4A'];
   
     var polygons = []; // empty array to hold all polygons
   
@@ -174,10 +174,18 @@ var timeMapButton = L.easyButton('fa-clock', function(btn, map) {
       var diff = turf.difference(currentPolygon.toGeoJSON(), prevPolygon.toGeoJSON());
       var differencePolygon = L.geoJSON(diff, {
         style: function (feature) {
+          if (map.hasLayer(light)){
           return {
             color: colors[i],
-            weight: 0,
-            fillOpacity: 0.5
+            weight: 2,
+            fillOpacity: 0.2
+          }
+          } else { 
+            return {
+              color: colors[i],
+              weight: 1,
+              fillOpacity: 0.1
+            }
           }
         }
       });
@@ -187,7 +195,9 @@ var timeMapButton = L.easyButton('fa-clock', function(btn, map) {
   
     // add all difference polygons to the map at once
     differencePolygonGroup = L.layerGroup(differencePolygons)
+    dt = L.featureGroup();
     map.addLayer(differencePolygonGroup);
+    testLayer.bringToFront();
     var groupBounds = L.featureGroup(differencePolygons).getBounds();
     map.fitBounds(groupBounds);
   };
@@ -206,7 +216,13 @@ var timeMapButton = L.easyButton('fa-clock', function(btn, map) {
       var holes = polygon.holes.map(ringCoordsHashToArray);
       return [shell].concat(holes);
     });
-    return L.polygon(shapesCoords, { color: color, weight: 0 });
+      if (map.hasLayer(light)){
+        return L.polygon(shapesCoords, { color: color, fillOpacity: 0.2, weight: 0 });
+      }
+      else {
+        return L.polygon(shapesCoords, { color: color, fillOpacity: 0.1, weight: 0 });
+      }
+    
   };
 
 // Light and dark theme can be toggled manually
@@ -231,10 +247,11 @@ var times = SunCalc.getTimes(new Date(), 47.22, -121.17);
 
 // Custom styling for the parks layer
 var myStyle = {
-    "color": "#4da343",
-    "weight": 0,
+    "color": "white",
+    "fillColor": "#4da343",
+    "weight": 1,
     "opacity": 1,
-    "fillOpacity": 0.5,
+    "fillOpacity": 1,
 };
 
 // Parks GeoJSON is added to the map with custom styling on appropriate popups for each feature
@@ -242,7 +259,7 @@ var testLayer = L.geoJSON(State_Parks, {
     onEachFeature: onEachFeature,
     boundary: { weight: 0 },
     style: myStyle,
-}).addTo(map);
+}).addTo(map).bringToFront();
 
 // This function uses the current date and time in Washington to determine if parks in the parks GeoJSON are open or closed, then adjusts their symbology and popups to communicate this to the user
 function onEachFeature(feature, layer) {
@@ -307,46 +324,65 @@ if (feature.properties.status === "open") {
     layer.bindPopup("<b>"+feature.properties.name+"</b>"+"<hr>"+"Open");
 }   else if (feature.properties.status = "closed") {
     layer.bindPopup("<b>"+feature.properties.name+"</b>"+"<hr>"+"Closed. The park will open again on "+feature.properties.Open_Date)
-    layer.setStyle({fillOpacity: 0.4, color: "#c22134"});
+    layer.setStyle({fillOpacity: 1, fillColor: "#ED2938", color: "#ffffff"});
 }
 }
 
 async function updateStyle() {
   await sendTimeMapRequest();
-// convert each polygon in differencePolygons to GeoJSON
-var differenceGeoJSON = differencePolygons.map(polygon => polygon.toGeoJSON());
-for (var i = 0; i < differenceGeoJSON.length; i++) {
-  var featureCollection = differenceGeoJSON[i];
-  // check if the object is a FeatureCollection
-  if (featureCollection.type === 'FeatureCollection') {
-    // merge all features in the FeatureCollection into a single feature
-    var mergedFeature = {
-      type: 'Feature',
-      properties: {},
-      geometry: {
-        type: 'MultiPolygon',
-        coordinates: []
+  var geojsonArray = [];
+
+  // Iterate through each Leaflet polygon
+  for (var i = 0; i < differencePolygons.length; i++) {
+    // Convert the polygon to GeoJSON
+    var geojson = differencePolygons[i].toGeoJSON();
+
+    // If the GeoJSON object is a FeatureCollection, iterate through each feature
+    if (geojson.type === "FeatureCollection") {
+      for (var j = 0; j < geojson.features.length; j++) {
+        // Convert each feature to a single feature and add it to the array
+        geojsonArray.push({
+          type: "Feature",
+          properties: geojson.features[j].properties,
+          geometry: geojson.features[j].geometry
+        });
       }
-    };
-    featureCollection.features.forEach(function(feature) {
-      mergedFeature.geometry.coordinates.push(feature.geometry.coordinates);
-    });
-    // replace the FeatureCollection with the merged feature
-    differenceGeoJSON[i] = mergedFeature;
+    } else {
+      // Otherwise, add the GeoJSON object to the array as is
+      geojsonArray.push(geojson);
+    }
   }
+// Define an array to hold unique fill colors for each polygon in geojsonArray
+var fillColors = ['#04d66d', '#3BCA6D', '#77945C', '#B25F4A'];
+
+// Define a fill color for features that don't intersect any polygons in geojsonArray
+var defaultFillColor = '#808080';
+
+// Iterate over each layer in testLayer
+testLayer.eachLayer(function(layer) {
+  
+  if (layer.feature.properties.status === 'open') {
+  // Initialize the fill color to the default fill color
+  var fillColor = defaultFillColor;
+
+  // Iterate over each polygon in geojsonArray
+  for (var i = 0; i < geojsonArray.length; i++) {
+    // Use turf.intersect to check if the layer intersects the polygon
+    if (turf.intersect(layer.toGeoJSON(), geojsonArray[i])) {
+      // If the layer intersects the polygon, set the fill color to the corresponding color from fillColors
+      fillColor = fillColors[i];
+      break;
+    }
+  }
+
+  // Define the new style for the layer
+  var newStyle = {
+    fillColor: fillColor,
+    // other style properties to update
+  };
+
+  // Apply the new style to the layer
+  layer.setStyle(newStyle);
 }
-console.log(differenceGeoJSON)
-  // iterate over each layer in testLayer
-    testLayer.eachLayer(function(layer) {
-      // check if the layer has a status property with a value of 'open'
-      if (layer.feature.properties.status === 'open') {
-        // define the new style for the layer
-        var newStyle = {
-          fillColor: '#FF0000',
-          // other style properties to update
-        };
-        // apply the new style to the layer
-        layer.setStyle(newStyle);
-      }
-    });
-  }
+});
+}
