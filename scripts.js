@@ -106,13 +106,14 @@ map.on('contextmenu', function(e){
 
 var timeMapButton = L.easyButton('fa-clock', function(btn, map) {
     if (activeMarker) {
-      sendTimeMapRequest(activeMarker.getLatLng());
+      updateStyle(activeMarker.getLatLng());
     }
   }).setPosition('topright');
   
   timeMapButton.addTo(map);
 
   var differencePolygonGroup = L.layerGroup()
+  var differencePolygons = [];
 
   async function sendTimeMapRequest() {
 
@@ -166,7 +167,7 @@ var timeMapButton = L.easyButton('fa-clock', function(btn, map) {
     }
   
     // create the new polygon group with difference polygons
-    var differencePolygons = [polygons[0]];
+    differencePolygons = [polygons[0]];
     for (var i = 1; i < polygons.length; i++) {
       var prevPolygon = polygons[i - 1];
       var currentPolygon = polygons[i];
@@ -310,11 +311,32 @@ if (feature.properties.status === "open") {
 }
 }
 
-map.on('layeradd', function(event) {
-  // check if the added layer is the differencePolygonGroup
-  if (event.layer === differencePolygonGroup) {
-    console.log('success')
-    // iterate over each layer in testLayer
+async function updateStyle() {
+  await sendTimeMapRequest();
+// convert each polygon in differencePolygons to GeoJSON
+var differenceGeoJSON = differencePolygons.map(polygon => polygon.toGeoJSON());
+for (var i = 0; i < differenceGeoJSON.length; i++) {
+  var featureCollection = differenceGeoJSON[i];
+  // check if the object is a FeatureCollection
+  if (featureCollection.type === 'FeatureCollection') {
+    // merge all features in the FeatureCollection into a single feature
+    var mergedFeature = {
+      type: 'Feature',
+      properties: {},
+      geometry: {
+        type: 'MultiPolygon',
+        coordinates: []
+      }
+    };
+    featureCollection.features.forEach(function(feature) {
+      mergedFeature.geometry.coordinates.push(feature.geometry.coordinates);
+    });
+    // replace the FeatureCollection with the merged feature
+    differenceGeoJSON[i] = mergedFeature;
+  }
+}
+console.log(differenceGeoJSON)
+  // iterate over each layer in testLayer
     testLayer.eachLayer(function(layer) {
       // check if the layer has a status property with a value of 'open'
       if (layer.feature.properties.status === 'open') {
@@ -328,4 +350,3 @@ map.on('layeradd', function(event) {
       }
     });
   }
-});
