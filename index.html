@@ -18,7 +18,17 @@
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-easybutton@2/src/easy-button.css">
         <script src="https://cdn.jsdelivr.net/npm/leaflet-easybutton@2/src/easy-button.js"></script>
 
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
         <script src='https://unpkg.com/@turf/turf@6/turf.min.js'></script>
+
+        <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js'></script>
+        <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css' rel='stylesheet' />
+        <!-- Import Assembly -->
+        <link href='https://api.mapbox.com/mapbox-assembly/v1.3.0/assembly.min.css' rel='stylesheet'>
+        <script src='https://api.mapbox.com/mapbox-assembly/v1.3.0/assembly.js'></script>
+
 
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 
@@ -26,8 +36,71 @@
 
         <script src="State_Parks.js"></script>
     </head>
-    <body>
-        <div id='map'></div>
+    <body>      
+        <div id="loading-animation">
+            <i class="fas fa-spinner fa-pulse fa-3x"></i>
+        </div>
+        <div id="container">
+            <div id="sidebar">
+                <div class="tabs">
+                    <div class="tab selected" onclick="changeTab(1)" id="tab1">Tab 1</div>
+                    <div class="tab" onclick="changeTab(2)" id="tab2">Tab 2</div>
+                    <div class="tab" onclick="changeTab(3)" id="tab3">Tab 3</div>
+                    <div class="tab" onclick="changeTab(4)" id="tab4">Tab 4</div>
+                </div>                  
+                <div class="content">
+                    <div class="tab-content active" id="content1">
+                      Content for Tab 1
+                    </div>
+                    <div class="tab-content" id="content2">
+                      Content for Tab 2
+                    </div>
+                    <div class="tab-content" id="content3">
+                      Content for Tab 3
+                    </div>
+                    <div class="tab-content" id="content4">
+                      Content for Tab 4
+                    </div>
+                </div>
+            </div>
+            <div id="content-container">
+                <button id="collapseButton" onclick="toggleAboutContainer()"><i class="fa-solid fa-caret-up"></i></button>
+                <div id='map'></div>
+                <label for="time-input">Select a time between 10 minutes and 4 hours (in 10-minute increments):</label>
+                <label for="departure">Select a departure</label>
+                    <div id="quartiles">
+                        <div class="options-container">
+                            <button class="options-button" id="options"><i class="fa-solid fa-sliders"></i><span id="caret"></span></button>
+                            <div id="options-pane">
+                                <label id="mapbox-label"><input type="radio" name="provider" value="mapbox" checked><img src="resources/mapbox.png" alt="Mapbox"></label>
+                                <label id="traveltime-label"><input type="radio" name="provider" value="traveltime"><img src="resources/traveltime.png" alt="TravelTime"></label>
+                            </div>
+                        </div>
+                        <div class="profile-container">
+                            <button class="routing-profile" id="profile"><i class="fa-solid fa-car" id="car1"></i><i class="fa-solid fa-car" id="car2"></i><span id="caret2"></span></button>
+                            <div id="profile-pane">
+                                <label id="traffic"><input type="radio" name="travel-method" value="driving-traffic" checked><i class="fa-solid fa-car" id="car1"></i><i class="fa-solid fa-car" id="car2"></i>Driving with traffic</label>
+                                <label id="car"><input type="radio" name="travel-method" value="driving"><i class="fa-solid fa-car" id="car"></i>Driving</label>
+                                <label id="bike"><input type="radio" name="travel-method" value="cycling"><i class="fa-solid fa-bicycle"></i>Cycling</label>
+                                <label id="walk"><input type="radio" name="travel-method" value="walking"><i class="fa-solid fa-person-walking"></i>Walking</label>
+                            </div>    
+                        </div>              
+                        <button class="calendar-button" id="departure"><i class="fa-regular fa-calendar"></i></button>
+                        <div class="quartile"><b>10 mins</b></div>
+                        <div class="quartile"><b>20 mins</b></div>
+                        <div class="quartile"><b>30 mins</b></div>
+                        <select class="dropdown" id="time-input" name="time">
+                        </select>
+                        <div id="button-container">
+                            <button class="calculate-button" id="calculate"><b>Find Parks </b><i class="fa-solid fa-right-to-bracket"></i></button>
+                            <div id="calculate-pane" class="pane">
+                              Drop a pin by right-clicking on the map or searching for an address
+                            </div>
+                          </div>                          
+                        <button class="close-map-button" id="closeMap"><b>Clear Travel Map</b</button>
+                    </div>
+            </div>
+        </div>      
         <script src="scripts.js"></script>
-    </body>
+        </body>
 </html>
