@@ -1,10 +1,6 @@
-// Access token for mapbox API
-const accessToken = 'pk.eyJ1IjoiZW10YWMiLCJhIjoiY2w5ejR0bXZyMGJpbDNvbG5jMTFobGJlZCJ9.UMi2J2LPPuz0qbFaCh0uRA';    
-// App ID for TravelTime Isochrone generator
+const accessToken = 'pk.eyJ1IjoiZW10YWMiLCJhIjoiY2w5ejR0bXZyMGJpbDNvbG5jMTFobGJlZCJ9.UMi2J2LPPuz0qbFaCh0uRA';
 const APPLICATION_ID = "7cf7cc27"
-// Application Key for TravelTime isochrone generator
 const API_KEY = "0874bc9fae906324041167cb3348c66b"
-// Creating tilemap for light theme
 var light = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
     attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
     maxZoom: 18,
@@ -14,7 +10,6 @@ var light = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}
     zoomOffset: -1,
 });
 
-// Creating tilemap for dark theme
 var dark = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
     attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
     maxZoom: 18,
@@ -24,20 +19,17 @@ var dark = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?
     zoomOffset: -1,
 });
 
-// Creating map object and setting initial view
 const map = L.map('map', {layers:[light]})
 
 map.on('load', onMapLoad);
 map.fitWorld();
 map.setView([47.22, -120.97], 8);
 
-// Adding light and dark tilemaps as basemaps
 var baseMaps = {
     "Light Theme": light,
     "Dark Theme": dark
 };
 
-// Creating custom icon to mark user-specified location
 var LeafIcon = L.Icon.extend({
     options: {
         iconUrl: 'resources/red-marker.png',
@@ -51,14 +43,12 @@ var LeafIcon = L.Icon.extend({
 
 var redIcon = new LeafIcon;
 
-// Creating layergroup to store marker. This allows the layergroup to be cleared when the user chooses a new location
 const layerGroup = L.layerGroup();
 let travelTimes = [10, 20, 30, 40];
 let departureTime = new Date();
 
 var activeMarker;
 
-// Using leaflet-control-geocoder plugin to add geocoding function to map. Search results limited to Washington
 var geocoder = L.Control.geocoder({
     defaultMarkGeocode: false,
     placeholder: "Find an Address in Washington",
@@ -67,7 +57,6 @@ var geocoder = L.Control.geocoder({
         geocodingQueryParams: {"viewbox": "-124.80854040819138, 45.15013696014261, -116.6733582340411, 49.08335516894325", "bounded": "1"},
     })
 })
-// When a geocoding result is produced, a custom icon is created and can be adjusted by the user
     .on('markgeocode', function(e) {
         layerGroup.clearLayers();
         var latlng = e.geocode.center;
@@ -83,14 +72,12 @@ var geocoder = L.Control.geocoder({
         map.addLayer(layerGroup);
         activeMarker.openPopup();
     }).addTo(map);
-// // When the custom icon is moved, this function updates the popup to include the current coordinates
 function onDragEnd(e) {
     var activeMarker = e.target;
     var latlng = activeMarker.getLatLng();
     activeMarker.bindPopup("Lat: " + latlng.lat.toFixed(4) + "<br>Lng: " + latlng.lng.toFixed(4)).openPopup();
 }
 
-// When the map is right clicked, this listener creates a custom marker and updates the popup with the current location
 map.on('contextmenu', function(e){
     var latlng = e.latlng;
     layerGroup.clearLayers();
@@ -116,6 +103,8 @@ const mapboxLabel = document.querySelector('#options-pane label#mapbox-label');
 const travelTimeLabel = document.querySelector('#options-pane label#traveltime-label');
 const profileLabels = document.querySelectorAll('#profile-pane label');
 const optionLabels = document.querySelectorAll('#options-pane label');
+const profileIcon = document.getElementById("profile-icon");
+
 
 function resetProfileLabels() {
   profileLabels.forEach(function(label) {
@@ -145,7 +134,6 @@ profileLabels.forEach(function(label) {
   });
 });
 
-// trigger a click event on the default option label
 document.querySelector('#traffic').click();
 
 function resetOptionLabels() {
@@ -196,6 +184,27 @@ document.addEventListener('click', (event) => {
   }
 });
 
+var radioInputs = document.querySelectorAll('input[name="travel-method"]');
+profileIcon.className = "fa-solid fa-traffic-light";
+radioInputs.forEach(function (input) {
+  input.addEventListener("change", function () {
+    var selectedProfile = document.querySelector(
+      'input[name="travel-method"]:checked'
+    );
+    var selectedProfileValue = selectedProfile.value;
+
+    if (selectedProfileValue === "driving-traffic") {
+      profileIcon.className = "fa-solid fa-traffic-light";
+    } else if (selectedProfileValue === "driving") {
+      profileIcon.className = "fa-solid fa-car";
+    } else if (selectedProfileValue === "cycling") {
+      profileIcon.className = "fa-solid fa-bicycle";
+    } else if (selectedProfileValue === "walking") {
+      profileIcon.className = "fa-solid fa-person-walking";
+    }
+  });
+});
+
 const timeMapInput = document.querySelector('#calculate');
 
 timeMapInput.addEventListener('click', function() {
@@ -230,7 +239,13 @@ timeMapInput.addEventListener('click', function() {
     var profile = selectedProfile ? selectedProfile.value : "driving-traffic";
     var colors = ['#04d66d', '#42a858', '#77945C', '#bf7530'];
     const polygonsOn = true;
-    var polygons = []; // empty array to hold all polygons
+    var polygons = [];
+
+    console.log(routePolyline)
+    if (routePolyline !== null) {
+      map.removeLayer(routePolyline);
+      routePolyline = null;
+    }
     
     document.getElementById("loading-animation").style.display = "flex";
 
@@ -260,7 +275,6 @@ timeMapInput.addEventListener('click', function() {
       }
     }
   
-    // create the new polygon group with difference polygons
     differencePolygons = [polygons[0]];
     for (var i = 1; i < polygons.length; i++) {
       var prevPolygon = polygons[i - 1];
@@ -287,10 +301,8 @@ timeMapInput.addEventListener('click', function() {
       differencePolygons.push(differencePolygon);
     }
   
-    // add all difference polygons to the map at once
     differencePolygonGroup = L.layerGroup(differencePolygons)
     dt = L.featureGroup();
-    // map.addLayer(differencePolygonGroup);
     testLayer.bringToFront();
     var groupBounds = L.featureGroup(differencePolygons).getBounds();
     map.fitBounds(groupBounds);
@@ -310,7 +322,7 @@ timeMapInput.addEventListener('click', function() {
   
     var colors = ['#04d66d', '#42a858', '#77945C', '#bf7530'];
   
-    var polygons = []; // empty array to hold all polygons
+    var polygons = [];
   
     for (var i = 0; i < travelTimes.length; i++) {
       var request = {
@@ -351,7 +363,6 @@ timeMapInput.addEventListener('click', function() {
       }
     }
   
-    // create the new polygon group with difference polygons
     differencePolygons = [polygons[0]];
     for (var i = 1; i < polygons.length; i++) {
       var prevPolygon = polygons[i - 1];
@@ -378,10 +389,8 @@ timeMapInput.addEventListener('click', function() {
       differencePolygons.push(differencePolygon);
     }
   
-    // add all difference polygons to the map at once
     differencePolygonGroup = L.layerGroup(differencePolygons)
     dt = L.featureGroup();
-    // map.addLayer(differencePolygonGroup);
     testLayer.bringToFront();
     var groupBounds = L.featureGroup(differencePolygons).getBounds();
     map.fitBounds(groupBounds);
@@ -410,10 +419,8 @@ timeMapInput.addEventListener('click', function() {
     
   };
 
-// Light and dark theme can be toggled manually
 var layerControl = L.control.layers(baseMaps).addTo(map);
 
-// When the map loads, the Suncalc plugin gets the current date and time in Washington and chooses light or dark theme depending on the current light level
 function onMapLoad() {
 var times = SunCalc.getTimes(new Date(), 47.22, -121.17);
         var sunrise = times.sunrise;
@@ -430,7 +437,6 @@ var times = SunCalc.getTimes(new Date(), 47.22, -121.17);
             }
 };
 
-// Custom styling for the parks layer
 var myStyle = {
     "color": "#4da343",
     "fillColor": "#4da343",
@@ -438,8 +444,8 @@ var myStyle = {
     "opacity": 1,
     "fillOpacity": 0.1,
 };
-
-var testLayer = L.geoJSON(State_Parks, {
+console.log(allParks);
+var testLayer = L.geoJSON(allParks, {
     onEachFeature: onEachFeature,
     boundary: { weight: 0 },
     style: myStyle,
@@ -469,17 +475,16 @@ closeButton.addEventListener("click", function () {
     tabContent4.innerHTML = "";
   });
 
-  testLayer = L.geoJSON(State_Parks, {
+  testLayer = L.geoJSON(allParks, {
     onEachFeature: onEachFeature,
     boundary: { weight: 0 },
     style: myStyle,
   }).addTo(map).bringToFront();
 });
 
-// This function uses the current date and time in Washington to determine if parks in the parks GeoJSON are open or closed, then adjusts their symbology and popups to communicate this to the user
 function onEachFeature(feature, layer) {
     const tempDate = new Date();
-    if (!feature.properties.Open_Date || feature.properties.Open_Date === null) {
+    if (!feature.properties.Open_Date || feature.properties.Open_Date === "N/A") {
         feature.properties.status = "open";
     } else { 
         let open = feature.properties.Open_Date;
@@ -512,33 +517,48 @@ function onEachFeature(feature, layer) {
         }
     }
     var times = SunCalc.getTimes(tempDate, 47.22, -121.17);
-    if (!feature.properties.Open_Time || feature.properties.Open_Time === null) {
+    if (!feature.properties.Open_Time || feature.properties.Open_Time === "N/A") {
         feature.properties.status = "open";
     }   else if (feature.properties.status === "open") {
         let openTime = feature.properties.Open_Time;
-                if (openTime === "Sunrise-30") {
+                if (openTime === "Dawn") {
                     openTime = (times.dawn.getHours()<10?'0':'')+times.dawn.getHours()+""+(times.dawn.getMinutes()<10?'0':'')+times.dawn.getMinutes()
-                }   else {
+                } else if (openTime === "Sunrise") {
+                  openTime = (times.sunrise.getHours()<10?'0':'')+times.sunrise.getHours()+""+(times.sunrise.getMinutes()<10?'0':'')+times.sunrise.getMinutes()
+                } else {
                     openTime = feature.properties.Open_Time;
                 };
             let closeTime = feature.properties.Close_Time;
-                if (closeTime === "Sunset+30") {
+                if (closeTime === "Dusk") {
                     closeTime = (times.dusk.getHours()<10?'0':'')+times.dusk.getHours()+""+(times.dusk.getMinutes()<10?'0':'')+times.dusk.getMinutes()
-                }   else {
+                } else if (closeTime === "Sunset") {
+                    closeTime = (times.sunset.getHours()<10?'0':'')+times.sunset.getHours()+""+(times.sunset.getMinutes()<10?'0':'')+times.sunset.getMinutes()
+                } else {
                     closeTime = feature.properties.Close_Time;
                 };
             var today2 = tempDate;
-            var currentTime = today2.getHours()+""+(today2.getMinutes()<10?'0':'')+today2.getMinutes();
+            var currentTime = (today2.getHours()<10?'0':'')+today2.getHours()+""+(today2.getMinutes()<10?'0':'')+today2.getMinutes();
             if (currentTime <= closeTime && currentTime >= openTime) {
                 feature.properties.status = "open";
             }   else {
                 feature.properties.status = "closed";
             }
+          // feature.properties.start = openTime;
+          // feature.properties.mid = currentTime;
+          // feature.properties.end = closeTime;
         }
 if (feature.properties.status === "open") {
     layer.bindPopup("<b>"+feature.properties.name+"</b>"+"<hr>"+"Open");
 }   else if (feature.properties.status = "closed") {
-    layer.bindPopup("<b>"+feature.properties.name+"</b>"+"<hr>"+"Closed. The park will open again on "+feature.properties.Open_Date)
+    layer.bindPopup("<b>" + feature.properties.name + "</b>" + "<hr>" + formatOpeningStatus(feature.properties));
+
+    function formatOpeningStatus(properties) {
+      if (properties.Open_Date !== "N/A") {
+        return "Closed. The park will open again on " + properties.Open_Date;
+      } else {
+        return "Closed. The park will open again at " + properties.Open_Time;
+      }
+    }
     layer.setStyle({fillOpacity: 0.1, fillColor: "#d13c21", color: "#d13c21"});
 }
 }
@@ -546,10 +566,8 @@ if (feature.properties.status === "open") {
 function zoomToFeature(layer, bounds) {
   map.fitBounds(bounds);
 
-  // Create a duplicate feature
   var duplicateFeature = L.geoJSON(layer.toGeoJSON(), {
     style: function (feature) {
-      // Use a custom style for the duplicate feature
       return {
         fillColor: 'transparent',
         color: 'white',
@@ -558,24 +576,18 @@ function zoomToFeature(layer, bounds) {
     },
   }).addTo(map);
 
-  // Get the center of the duplicate feature's bounds
   var center = duplicateFeature.getBounds().getCenter();
 
-  // Set up CSS animation for cascading effect
   var svgElement = duplicateFeature.getLayers()[0]._path;
-  svgElement.setAttribute('stroke-dasharray', '2500 1000'); // Constant dash array
-  svgElement.setAttribute('stroke-dashoffset', '0'); // Start with offset 0
-  svgElement.style.animation = 'none'; // Reset the animation
+  svgElement.setAttribute('stroke-dasharray', '2500 1000');
+  svgElement.setAttribute('stroke-dashoffset', '0');
+  svgElement.style.animation = 'none';
 
-  // Define the fixed duration for the animation
-  var animationDuration = 5; // Adjust the duration as needed
+  var animationDuration = 2;
 
-  // Delay the animation setup to allow resetting the properties
   setTimeout(function () {
-    // Set up SVG animation for cascading effect
-    svgElement.style.animation = `cascade ${animationDuration}s linear forwards`; // Adjust the duration as needed
+    svgElement.style.animation = `cascade ${animationDuration}s linear forwards`;
 
-    // Define keyframes for the cascading animation
     var cascadeKeyframes = `
       @keyframes cascade {
         0% {
@@ -597,32 +609,149 @@ function zoomToFeature(layer, bounds) {
           stroke-width: 7px;
         }
         100% {
-          stroke-dashoffset: 8000;
+          stroke-dashoffset: 3000;
           stroke-opacity: 0;
           stroke-width: 0px;
         }
       }
     `;
 
-    // Create a style element and append the cascadeKeyframes to it
     var styleElement = document.createElement('style');
     styleElement.innerHTML = cascadeKeyframes;
 
-    // Append the style element to the document's head
     document.head.appendChild(styleElement);
 
-    // Remove the duplicate feature after a certain duration (e.g., animationDuration seconds)
     setTimeout(function () {
       map.removeLayer(duplicateFeature);
       document.head.removeChild(styleElement);
-    }, animationDuration * 1000); // Adjust the duration as needed
-  }, 100); // Adjust the delay as needed
+    }, animationDuration * 1000);
+  }, 100);
 
-  // Add click event listener to remove the duplicate feature and propagate the click to the original feature
   duplicateFeature.on('click', function (event) {
     map.removeLayer(duplicateFeature);
-    layer.fire('click', event); // Propagate the click event to the original feature
+    layer.fire('click', event);
   });
+}
+
+var duplicateFeature = null;
+var routePopup = null;
+var routePolyline = null;
+
+function routeToFeature(geometry, textColor) {
+  document.getElementById("loading-animation").style.display = "flex";
+
+  if (duplicateFeature !== null) {
+    map.removeLayer(duplicateFeature);
+    duplicateFeature = null;
+  }
+  if (routePolyline !== null) {
+    map.removeLayer(routePolyline);
+    routePolyline = null;
+  }
+
+  var markerCoords = activeMarker.getLatLng();
+  var selectedProfile = document.querySelector('input[name="travel-method"]:checked');
+  var profile = selectedProfile ? selectedProfile.value : "driving-traffic";
+
+  var apiUrl =
+    'https://api.mapbox.com/directions/v5/mapbox/' +
+    profile +
+    '/' +
+    markerCoords.lng +
+    ',' +
+    markerCoords.lat +
+    ';' +
+    geometry.coordinates[0][0][0] +
+    ',' +
+    geometry.coordinates[0][0][1] +
+    '?geometries=geojson&access_token=' +
+    accessToken;
+
+  routePolyline = L.polyline([], { 
+    color: '#e66add', 
+    weight: 3
+  }).addTo(map);
+
+  fetch(apiUrl)
+    .then(function (response) {
+      return response.json();
+    })
+    .then(function (data) {
+      var route = data.routes[0];
+      var routeCoordinates = route.geometry.coordinates;
+
+      var latLngRoute = routeCoordinates.map(function (coord) {
+        return L.latLng(coord[1], coord[0]);
+      });
+
+      routePolyline.setLatLngs(latLngRoute);
+      map.fitBounds(routePolyline.getBounds());
+      var polylineLength = L.GeometryUtil.length(routePolyline);
+
+      var svgElement = routePolyline.getElement();
+      svgElement.setAttribute('stroke-dasharray', polylineLength);
+      svgElement.setAttribute('stroke-dashoffset', polylineLength);
+      svgElement.style.animation = 'none';
+
+      var animationDuration = Math.max(polylineLength / 1000);
+
+      setTimeout(function () {
+        svgElement.style.animation = `grow ${animationDuration}s linear forwards`;
+        var growKeyframes = `
+          @keyframes grow {
+            0% {
+              stroke-dashoffset: ${polylineLength};
+            }
+            100% {
+              stroke-dashoffset: 0;
+            }
+          }
+        `;
+
+        var styleElement = document.createElement('style');
+        styleElement.innerHTML = growKeyframes;
+
+        document.head.appendChild(styleElement);
+
+        setTimeout(function () {
+          svgElement.style.strokeOpacity = 1;
+          showRouteTravelTime(route.duration, textColor);
+        }, 1000);
+      }, 10);
+
+      var duplicateStyle = {
+        color: '#47a9ff',
+        weight: 4,
+        opacity: 1,
+        fillOpacity: 0,
+      };
+      duplicateFeature = L.geoJSON(geometry, { style: duplicateStyle }).addTo(map);
+      document.getElementById("loading-animation").style.display = "none";
+    });
+}
+
+function showRouteTravelTime(duration, textColor) {
+  if (routePopup !== null) {
+    routePopup.remove();
+  }
+
+  var travelTime = Math.round(duration / 60);
+  var content = '<b>Travel Time: ' + travelTime + ' minutes</b>';
+
+  routePopup = L.popup({
+    className: 'custom-popup-wrapper'
+  })
+    .setLatLng(routePolyline.getLatLngs()[0])
+    .setContent("<div class='travel-time-content'>" + content + "</div>");
+
+  routePolyline.bindPopup(routePopup).openPopup();
+
+  var styleElement = document.createElement('style');
+  styleElement.innerHTML = 
+    '.custom-popup-wrapper .leaflet-popup-content-wrapper { border: 2px solid white; background-color: ' + textColor + '; z-index: 900; }' +
+    '.custom-popup-wrapper .leaflet-popup-content { margin: 0; }' +
+    '.custom-popup-wrapper .leaflet-popup-close-button span { color: #ffffff; }';
+  document.head.appendChild(styleElement);
 }
 
 async function updateStyle() {
@@ -634,15 +763,11 @@ async function updateStyle() {
   }
   var geojsonArray = [];
 
-  // Iterate through each Leaflet polygon
   for (var i = 0; i < differencePolygons.length; i++) {
-    // Convert the polygon to GeoJSON
     var geojson = differencePolygons[i].toGeoJSON();
 
-    // If the GeoJSON object is a FeatureCollection, iterate through each feature
     if (geojson.type === "FeatureCollection") {
       for (var j = 0; j < geojson.features.length; j++) {
-        // Convert each feature to a single feature and add it to the array
         geojsonArray.push({
           type: "Feature",
           properties: geojson.features[j].properties,
@@ -650,14 +775,11 @@ async function updateStyle() {
         });
       }
     } else {
-      // Otherwise, add the GeoJSON object to the array as is
       geojsonArray.push(geojson);
     }
   }
-// Define an array to hold unique fill colors for each polygon in geojsonArray
 var fillColors = ['#04d66d', '#42a858', '#77945C', '#bf7530'];
-var newWeight = 4;
-// Define a fill color for features that don't intersect any polygons in geojsonArray
+var newWeight = 2;
 var defaultFillColor = '#808080';
 var defaultWeight = 1;
 
@@ -665,88 +787,375 @@ var tabContent = document.getElementById("content1");
 var tabContent2 = document.getElementById("content2");
 var tabContent3 = document.getElementById("content3");
 var tabContent4 = document.getElementById("content4");
-// Iterate over each layer in testLayer
 testLayer.eachLayer(function(layer) {
   if (layer.feature.properties.status === 'open') {
-  // Initialize the fill color to the default fill color
   var fillColor = defaultFillColor;
   var weight = defaultWeight
-  // Iterate over each polygon in geojsonArray
   for (var i = 0; i < geojsonArray.length; i++) {
-    // Use turf.intersect to check if the layer intersects the polygon
     if (turf.intersect(layer.toGeoJSON(), geojsonArray[i])) {
-      // If the layer intersects the polygon, set the fill color to the corresponding color from fillColors
       fillColor = fillColors[i];
       weight = newWeight;
       break;
     }
   }
 
-  // Define the new style for the layer
   var newStyle = {
     fillColor: fillColor,
     fillOpacity: 0.1,
     color: fillColor,
     weight: weight,
-    // other style properties to update
   };
 
-  // Add features to the corresponding tabs and update them if necessary
   if (newStyle.fillColor === "#04d66d") {
     var tabContent = document.getElementById("content1");
     var featureName = layer.feature.properties.name;
+    var agency = layer.feature.properties.Agency;
+    var type = layer.feature.properties.Type;
     var bounds = layer.getBounds();
   
-    // Extract individual coordinates
     var sw = bounds.getSouthWest();
     var ne = bounds.getNorthEast();
   
-    // Construct the bounds string manually
     var boundsString = "L.latLngBounds([" + sw.lat + ", " + sw.lng + "], [" + ne.lat + ", " + ne.lng + "])";
-  
-    tabContent.innerHTML += "<p>" + featureName + "</p>" + "<button onclick='zoomToFeature(testLayer.getLayer(" + layer._leaflet_id + "), " + boundsString + ")'>Zoom To <i class='fa-solid fa-magnifying-glass'></i></button><img src='resources/parkPic.jpg'><div class='sidebar-divider'></div>";
+    
+    var typeToColor = {
+      "City": "city-color",
+      "County": "county-color",
+      "State": "state-color",
+      "Federal": "federal-color",
+      "Land Trust": "land-trust-color",
+      "Other": "other-color",
+    };
+    
+    var agencyClass = typeToColor[type] || "";
+
+    function convertMilitaryToConventional(militaryTime) {
+      if (militaryTime === null || typeof militaryTime !== "string") {
+        return militaryTime;
+      }
+    
+      if (militaryTime.toUpperCase() === "N/A") {
+        return militaryTime;
+      }
+    
+      const militaryTimeRegex = /^\d{4}$/;
+      if (!militaryTime.match(militaryTimeRegex)) {
+        return militaryTime;
+      }
+    
+      const hours = militaryTime.slice(0, 2);
+      const minutes = militaryTime.slice(2);
+    
+      let formattedTime;
+      if (hours === "00") {
+        formattedTime = "12:" + minutes + "am";
+      } else if (hours < 12) {
+        formattedTime = parseInt(hours) + ":" + minutes + "am";
+      } else if (hours === "12") {
+        formattedTime = "12:" + minutes + "pm";
+      } else {
+        formattedTime = (parseInt(hours) - 12) + ":" + minutes + "pm";
+      }
+    
+      return formattedTime;
+    }
+    
+    var openTime = layer.feature.properties.Open_Time;
+    var closeTime = layer.feature.properties.Close_Time;
+    
+    if (openTime === "N/A" && closeTime === "N/A") {
+      var openCloseText = "Open All Day";
+    } else {
+      var formattedOpenTime = convertMilitaryToConventional(openTime);
+      var formattedCloseTime = convertMilitaryToConventional(closeTime);
+    
+      var openCloseText = "Open from " + formattedOpenTime + " to " + formattedCloseTime;
+    }
+
+    tabContent.innerHTML +=
+      "<p>" +
+      "<b>" +
+      featureName +
+      "</b>" +
+      "<br>" +
+      "<span class='" + agencyClass + "'>" + agency + "</span>" +
+      "<br>" +
+      "</p>" +
+      "<p>" +
+      openCloseText +
+      "</p>" +
+      "<button onclick='zoomToFeature(testLayer.getLayer(" +
+      layer._leaflet_id +
+      "), " +
+      boundsString +
+      ")'>Zoom To <i id = 'search' class='fa-solid fa-magnifying-glass'></i></button>" +
+      "<button onclick='routeToFeature(" +
+      JSON.stringify(layer.feature.geometry) +
+      ", \"#04d66d\")'>Route To <i class='fa-solid fa-directions'></i></button>" +
+      "<div class='sidebar-divider'></div>";
   } else if (newStyle.fillColor === "#42a858") {
     var tabContent2 = document.getElementById("content2");
     var featureName = layer.feature.properties.name;
+    var agency = layer.feature.properties.Agency;
+    var type = layer.feature.properties.Type;
     var bounds = layer.getBounds();
   
-    // Extract individual coordinates
     var sw = bounds.getSouthWest();
     var ne = bounds.getNorthEast();
   
-    // Construct the bounds string manually
     var boundsString = "L.latLngBounds([" + sw.lat + ", " + sw.lng + "], [" + ne.lat + ", " + ne.lng + "])";
+
+    var typeToColor = {
+      "City": "city-color",
+      "County": "county-color",
+      "State": "state-color",
+      "Federal": "federal-color",
+      "Land Trust": "land-trust-color",
+      "Other": "other-color",
+    };
+    
+    var agencyClass = typeToColor[type] || "";
+
+    function convertMilitaryToConventional(militaryTime) {
+      if (militaryTime === null || typeof militaryTime !== "string") {
+        return militaryTime;
+      }
+    
+      if (militaryTime.toUpperCase() === "N/A") {
+        return militaryTime;
+      }
+    
+      const militaryTimeRegex = /^\d{4}$/;
+      if (!militaryTime.match(militaryTimeRegex)) {
+        return militaryTime;
+      }
+    
+      const hours = militaryTime.slice(0, 2);
+      const minutes = militaryTime.slice(2);
+    
+      let formattedTime;
+      if (hours === "00") {
+        formattedTime = "12:" + minutes + "am";
+      } else if (hours < 12) {
+        formattedTime = parseInt(hours) + ":" + minutes + "am";
+      } else if (hours === "12") {
+        formattedTime = "12:" + minutes + "pm";
+      } else {
+        formattedTime = (parseInt(hours) - 12) + ":" + minutes + "pm";
+      }
+    
+      return formattedTime;
+    }
+    
+    var openTime = layer.feature.properties.Open_Time;
+    var closeTime = layer.feature.properties.Close_Time;
+    
+    if (openTime === "N/A" && closeTime === "N/A") {
+      var openCloseText = "Open All Day";
+    } else {
+      var formattedOpenTime = convertMilitaryToConventional(openTime);
+      var formattedCloseTime = convertMilitaryToConventional(closeTime);
+    
+      var openCloseText = "Open from " + formattedOpenTime + " to " + formattedCloseTime;
+    }
   
-    tabContent2.innerHTML += "<p>" + featureName + "</p>" + "<button onclick='zoomToFeature(testLayer.getLayer(" + layer._leaflet_id + "), " + boundsString + ")'>Zoom To <i class='fa-solid fa-magnifying-glass'></i></button><img src='resources/parkPic.jpg'><div class='sidebar-divider'></div>";
+    tabContent2.innerHTML +=
+      "<p>" +
+      "<b>" +
+      featureName +
+      "</b>" +
+      "<br>" +
+      "<span class='" + agencyClass + "'>" + agency + "</span>" +
+      "<br>" +
+      "</p>" +
+      "<p>" +
+      openCloseText +
+      "</p>" +
+      "<button onclick='zoomToFeature(testLayer.getLayer(" +
+      layer._leaflet_id +
+      "), " +
+      boundsString +
+      ")'>Zoom To <i id = 'search' class='fa-solid fa-magnifying-glass'></i></button>" +
+      "<button onclick='routeToFeature(" +
+      JSON.stringify(layer.feature.geometry) +
+      ", \"#42a858\")'>Route To <i class='fa-solid fa-directions'></i></button>" +
+      "<div class='sidebar-divider'></div>";
   } else if (newStyle.fillColor === "#77945C") {
     var tabContent3 = document.getElementById("content3");
     var featureName = layer.feature.properties.name;
+    var agency = layer.feature.properties.Agency;
+    var type = layer.feature.properties.Type;
     var bounds = layer.getBounds();
   
-    // Extract individual coordinates
     var sw = bounds.getSouthWest();
     var ne = bounds.getNorthEast();
   
-    // Construct the bounds string manually
     var boundsString = "L.latLngBounds([" + sw.lat + ", " + sw.lng + "], [" + ne.lat + ", " + ne.lng + "])";
+
+    var typeToColor = {
+      "City": "city-color",
+      "County": "county-color",
+      "State": "state-color",
+      "Federal": "federal-color",
+      "Land Trust": "land-trust-color",
+      "Other": "other-color",
+    };
+    
+    var agencyClass = typeToColor[type] || "";
+
+    function convertMilitaryToConventional(militaryTime) {
+      if (militaryTime === null || typeof militaryTime !== "string") {
+        return militaryTime;
+      }
+    
+      if (militaryTime.toUpperCase() === "N/A") {
+        return militaryTime;
+      }
+    
+      const militaryTimeRegex = /^\d{4}$/;
+      if (!militaryTime.match(militaryTimeRegex)) {
+        return militaryTime;
+      }
+    
+      const hours = militaryTime.slice(0, 2);
+      const minutes = militaryTime.slice(2);
+    
+      let formattedTime;
+      if (hours === "00") {
+        formattedTime = "12:" + minutes + "am";
+      } else if (hours < 12) {
+        formattedTime = parseInt(hours) + ":" + minutes + "am";
+      } else if (hours === "12") {
+        formattedTime = "12:" + minutes + "pm";
+      } else {
+        formattedTime = (parseInt(hours) - 12) + ":" + minutes + "pm";
+      }
+    
+      return formattedTime;
+    }
+    
+    var openTime = layer.feature.properties.Open_Time;
+    var closeTime = layer.feature.properties.Close_Time;
+    
+    if (openTime === "N/A" && closeTime === "N/A") {
+      var openCloseText = "Open All Day";
+    } else {
+      var formattedOpenTime = convertMilitaryToConventional(openTime);
+      var formattedCloseTime = convertMilitaryToConventional(closeTime);
+    
+      var openCloseText = "Open from " + formattedOpenTime + " to " + formattedCloseTime;
+    }
   
-    tabContent3.innerHTML += "<p>" + featureName + "</p>" + "<button onclick='zoomToFeature(testLayer.getLayer(" + layer._leaflet_id + "), " + boundsString + ")'>Zoom To <i class='fa-solid fa-magnifying-glass'></i></button><img src='resources/parkPic.jpg'><div class='sidebar-divider'></div>";
+    tabContent3.innerHTML +=
+      "<p>" +
+      "<b>" +
+      featureName +
+      "</b>" +
+      "<br>" +
+      "<span class='" + agencyClass + "'>" + agency + "</span>" +
+      "<br>" +
+      "</p>" +
+      "<p>" +
+      openCloseText +
+      "</p>" +
+      "<button onclick='zoomToFeature(testLayer.getLayer(" +
+      layer._leaflet_id +
+      "), " +
+      boundsString +
+      ")'>Zoom To <i id = 'search' class='fa-solid fa-magnifying-glass'></i></button>" +
+      "<button onclick='routeToFeature(" +
+      JSON.stringify(layer.feature.geometry) +
+      ", \"#77945C\")'>Route To <i class='fa-solid fa-directions'></i></button>" +
+      "<div class='sidebar-divider'></div>";
   } else if (newStyle.fillColor === "#bf7530") {
     var tabContent4 = document.getElementById("content4");
     var featureName = layer.feature.properties.name;
+    var agency = layer.feature.properties.Agency;
+    var type = layer.feature.properties.Type;
     var bounds = layer.getBounds();
   
-    // Extract individual coordinates
     var sw = bounds.getSouthWest();
     var ne = bounds.getNorthEast();
   
-    // Construct the bounds string manually
     var boundsString = "L.latLngBounds([" + sw.lat + ", " + sw.lng + "], [" + ne.lat + ", " + ne.lng + "])";
+
+    var typeToColor = {
+      "City": "city-color",
+      "County": "county-color",
+      "State": "state-color",
+      "Federal": "federal-color",
+      "Land Trust": "land-trust-color",
+      "Other": "other-color",
+    };
+    
+    var agencyClass = typeToColor[type] || "";
+
+    function convertMilitaryToConventional(militaryTime) {
+      if (militaryTime === null || typeof militaryTime !== "string") {
+        return militaryTime;
+      }
+    
+      if (militaryTime.toUpperCase() === "N/A") {
+        return militaryTime;
+      }
+    
+      const militaryTimeRegex = /^\d{4}$/;
+      if (!militaryTime.match(militaryTimeRegex)) {
+        return militaryTime;
+      }
+    
+      const hours = militaryTime.slice(0, 2);
+      const minutes = militaryTime.slice(2);
+    
+      let formattedTime;
+      if (hours === "00") {
+        formattedTime = "12:" + minutes + "am";
+      } else if (hours < 12) {
+        formattedTime = parseInt(hours) + ":" + minutes + "am";
+      } else if (hours === "12") {
+        formattedTime = "12:" + minutes + "pm";
+      } else {
+        formattedTime = (parseInt(hours) - 12) + ":" + minutes + "pm";
+      }
+    
+      return formattedTime;
+    }
+    
+    var openTime = layer.feature.properties.Open_Time;
+    var closeTime = layer.feature.properties.Close_Time;
+    
+    if (openTime === "N/A" && closeTime === "N/A") {
+      var openCloseText = "Open All Day";
+    } else {
+      var formattedOpenTime = convertMilitaryToConventional(openTime);
+      var formattedCloseTime = convertMilitaryToConventional(closeTime);
+    
+      var openCloseText = "Open from " + formattedOpenTime + " to " + formattedCloseTime;
+    }
   
-    tabContent4.innerHTML += "<p>" + featureName + "</p>" + "<button onclick='zoomToFeature(testLayer.getLayer(" + layer._leaflet_id + "), " + boundsString + ")'>Zoom To <i class='fa-solid fa-magnifying-glass'></i></button><img src='resources/parkPic.jpg'><div class='sidebar-divider'></div>";
+    tabContent4.innerHTML +=
+      "<p>" +
+      "<b>" +
+      featureName +
+      "</b>" +
+      "<br>" +
+      "<span class='" + agencyClass + "'>" + agency + "</span>" +
+      "<br>" +
+      "</p>" +
+      "<p>" +
+      openCloseText +
+      "</p>" +
+      "<button onclick='zoomToFeature(testLayer.getLayer(" +
+      layer._leaflet_id +
+      "), " +
+      boundsString +
+      ")'>Zoom To <i id = 'search' class='fa-solid fa-magnifying-glass'></i></button>" +
+      "<button onclick='routeToFeature(" +
+      JSON.stringify(layer.feature.geometry) +
+      ", \"#bf7530\")'>Route To <i class='fa-solid fa-directions'></i></button>" +
+      "<div class='sidebar-divider'></div>";
   }
 
-    // Apply the new style to the layer
     layer.setStyle(newStyle);
     document.getElementById("loading-animation").style.display = "none";
 }
@@ -771,10 +1180,8 @@ if (tabContent4.innerHTML === "") {
 const timeInput = document.getElementById("time-input");
 
 function updateDropdownOptions(provider) {
-  // Clear all options
   timeInput.innerHTML = '';
 
-  // Helper function to create an option element with bold text
   function createOption(value, text) {
     const option = document.createElement('option');
     option.value = value;
@@ -783,9 +1190,7 @@ function updateDropdownOptions(provider) {
     return option;
   }
 
-  // Add options based on the selected provider
   if (provider === 'traveltime') {
-    // Add all options
     timeInput.appendChild(createOption(10, '10 min'));
     timeInput.appendChild(createOption(20, '20 min'));
     timeInput.appendChild(createOption(30, '30 min'));
@@ -808,7 +1213,6 @@ function updateDropdownOptions(provider) {
     timeInput.appendChild(createOption(230, '3 hrs 50 mins'));
     timeInput.appendChild(createOption(240, '4 hrs'));
   } else if (provider === 'mapbox') {
-    // Add the first 6 options
     timeInput.appendChild(createOption(10, '10 min'));
     timeInput.appendChild(createOption(20, '20 min'));
     timeInput.appendChild(createOption(30, '30 min'));
@@ -818,19 +1222,15 @@ function updateDropdownOptions(provider) {
   }
 }
 
-// Apply CSS style to the selected option
 timeInput.addEventListener('change', function() {
-  // Clear the bold style from all options
   const options = timeInput.getElementsByTagName('option');
   for (let i = 0; i < options.length; i++) {
     options[i].style.fontWeight = 'normal';
   }
 
-  // Apply the bold style to the selected option
   const selectedOption = timeInput.options[timeInput.selectedIndex];
   selectedOption.style.fontWeight = 'bold';
 
-  // Apply the bold style to the selected value in the accompanying box
   timeInput.style.fontWeight = 'bold';
 });
 
@@ -841,7 +1241,6 @@ for (const radio of providerRadios) {
   });
 }
 
-// initialize the dropdown options based on the initial provider value
 const initialProvider = document.querySelector('input[name="provider"]:checked').value;
 updateDropdownOptions(initialProvider);
 const quartiles = document.querySelectorAll("#quartiles .quartile");
@@ -853,7 +1252,6 @@ window.addEventListener('load', function() {
 const initialSelectedOption = timeInput.options[timeInput.selectedIndex];
 initialSelectedOption.style.fontWeight = 'bold';
 
-// Apply bold style to the selected value in the accompanying box on page load
 timeInput.style.fontWeight = 'bold';
 
 let maxTime = 40;
@@ -896,10 +1294,8 @@ function formatTime(minutes) {
   }
 }
 
-// Get the input element
 const departureInput = document.querySelector('#departure');
 
-// Initialize the flatpickr date picker
 flatpickr(departureInput, {
   enableTime: true,
   dateFormat: 'Y-m-d H:i',
@@ -911,7 +1307,6 @@ flatpickr(departureInput, {
     if (isNaN(departureTime)){
       return
     } else {
-    // Update the departureTime variable with the selected date and time
     pseudoTime = new Date(dateStr);
     var times = SunCalc.getTimes(departureTime, 47.22, -121.17);
     
@@ -932,7 +1327,7 @@ flatpickr(departureInput, {
         var oneYearLater = today.setFullYear(today.getFullYear() + 1);
     testLayer.eachLayer(function(layer) {
       var feature = layer.feature;
-      if (!feature.properties.Open_Date || feature.properties.Open_Date === null) {
+      if (!feature.properties.Open_Date || feature.properties.Open_Date === "N/A") {
         feature.properties.status = "open";
       } else { 
         let open = feature.properties.Open_Date;
@@ -961,34 +1356,49 @@ flatpickr(departureInput, {
         }
       }
       var times = SunCalc.getTimes(pseudoTime, 47.22, -121.17);
-      if (!feature.properties.Open_Time || feature.properties.Open_Time === null) {
+      if (!feature.properties.Open_Time || feature.properties.Open_Time === "N/A") {
         feature.properties.status = "open";
       }   else if (feature.properties.status === "open") {
         let openTime = feature.properties.Open_Time;
-                if (openTime === "Sunrise-30") {
+                if (openTime === "Dawn") {
                     openTime = (times.dawn.getHours()<10?'0':'')+times.dawn.getHours()+""+(times.dawn.getMinutes()<10?'0':'')+times.dawn.getMinutes()
-                }   else {
+                } else if (openTime === "Sunrise") {
+                    openTime = (times.sunrise.getHours()<10?'0':'')+times.sunrise.getHours()+""+(times.sunrise.getMinutes()<10?'0':'')+times.sunrise.getMinutes()
+                } else {
                     openTime = feature.properties.Open_Time;
                 };
             let closeTime = feature.properties.Close_Time;
-                if (closeTime === "Sunset+30") {
+                if (closeTime === "Dusk") {
                     closeTime = (times.dusk.getHours()<10?'0':'')+times.dusk.getHours()+""+(times.dusk.getMinutes()<10?'0':'')+times.dusk.getMinutes()
-                }   else {
+                } else if (closeTime === "Sunset") {
+                    closeTime = (times.sunset.getHours()<10?'0':'')+times.sunset.getHours()+""+(times.sunset.getMinutes()<10?'0':'')+times.sunset.getMinutes()
+                } else {
                     closeTime = feature.properties.Close_Time;
                 };
             var today2 = pseudoTime;
-            var currentTime = today2.getHours()+""+(today2.getMinutes()<10?'0':'')+today2.getMinutes();
+            var currentTime = (today2.getHours()<10?'0':'')+today2.getHours()+""+(today2.getMinutes()<10?'0':'')+today2.getMinutes();
             if (currentTime <= closeTime && currentTime >= openTime) {
                 feature.properties.status = "open";
             }   else {
                 feature.properties.status = "closed";
             }
+          // feature.properties.start = openTime;
+          // feature.properties.mid = currentTime;
+          // feature.properties.end = closeTime;
         }
       if (feature.properties.status === "open") {
       layer.bindPopup("<b>"+feature.properties.name+"</b>"+"<hr>"+"Open");
       layer.setStyle({fillOpacity: 0.1, fillColor: "#4da343", color: "#4da343"});
       }   else if (feature.properties.status = "closed") {
-      layer.bindPopup("<b>"+feature.properties.name+"</b>"+"<hr>"+"Closed. The park will open again on "+feature.properties.Open_Date)
+        layer.bindPopup("<b>" + feature.properties.name + "</b>" + "<hr>" + formatOpeningStatus(feature.properties));
+
+        function formatOpeningStatus(properties) {
+          if (properties.Open_Date !== "N/A") {
+            return "Closed. The park will open again on " + properties.Open_Date;
+          } else {
+            return "Closed. The park will open again at " + properties.Open_Time;
+          }
+        }
       layer.setStyle({fillOpacity: 0.1, fillColor: "#d13c21", color: "#d13c21"});
       }
     });
