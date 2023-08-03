@@ -107,13 +107,15 @@ html, body, #map {
 
 .tab-content button {
   background-color:rgb(120, 103, 180);
-  border: 1px solid white;
+  border: 1px solid rgb(255, 255, 255);
   padding-left: 10px;
   padding-right: 10px;
   margin-left: 20px;
+  display: inline-block;
+  margin-top: 10px;
 }
 
-.tab-content i {
+#search.fa-solid.fa-magnifying-glass {
   transform: rotate(90deg);
 }
 
@@ -154,7 +156,7 @@ html, body, #map {
 .pane {
   opacity: 0;
   transition: opacity 0.3s ease;
-  background-color: #ffffff9d;
+  background-color: #ffffffce;
   border: 1px solid rgb(0, 168, 219);
   padding: 10px;
   position: absolute;
@@ -278,42 +280,9 @@ html, body, #map {
   display: flex;
   justify-content: center;
   align-items: center;
-}
-
-.routing-profile #car1 {
   color: white;
   background-color:rgb(120, 103, 180);
   font-size: 16px;
-  position: absolute;
-  z-index: 1;
-}
-
-.routing-profile #car2 {
-  color: white;
-  background-color:rgb(120, 103, 180);
-  font-size: 16px;
-  position: absolute;
-  z-index: 2;
-}
-
-#traffic #car1 {
-  color: white;
-  background-color:rgb(120, 103, 180);
-  font-size: 16px;
-  position: absolute;
-  top: 15px;
-  left: 10px;
-  z-index: 1;
-}
-
-#traffic #car2 {
-  color: white;
-  background-color:rgb(120, 103, 180);
-  font-size: 16px;
-  position: absolute;
-  top: 20px;
-  left: 17px;
-  z-index: 2;
 }
 
 #caret {
@@ -549,3 +518,36 @@ select::-moz-scrollbar-thumb {
   #loading-animation .fa-spinner {
     color: #fff;
   }
+
+.travel-time-content {
+  color: white;
+  padding-right: 20px;
+    padding-left: 20px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    z-index: 501
+}
+
+.city-color {
+  color: #f371e4;
+}
+
+.county-color {
+  color: #b07bf1;
+}
+
+.state-color {
+  color: #73eb9f;
+}
+
+.federal-color {
+  color: #ebb377;
+}
+
+.land-trust-color {
+  color: #eb8787
+}
+
+.other-color {
+  color: #96acf3;
+}
