@@ -32,9 +32,12 @@
 
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 
+        <script src=" https://cdn.jsdelivr.net/npm/leaflet-geometryutil@0.10.2/src/leaflet.geometryutil.min.js "></script>
+
         <link rel="stylesheet" href="styles.css"/>
 
         <script src="State_Parks.js"></script>
+        <script src="AllParks.js"></script>
     </head>
     <body>      
         <div id="loading-animation">
@@ -77,9 +80,9 @@
                             </div>
                         </div>
                         <div class="profile-container">
-                            <button class="routing-profile" id="profile"><i class="fa-solid fa-car" id="car1"></i><i class="fa-solid fa-car" id="car2"></i><span id="caret2"></span></button>
+                            <button class="routing-profile" id="profile"><i class="fa-solid" id="profile-icon"></i><span id="caret2"></span></button>
                             <div id="profile-pane">
-                                <label id="traffic"><input type="radio" name="travel-method" value="driving-traffic" checked><i class="fa-solid fa-car" id="car1"></i><i class="fa-solid fa-car" id="car2"></i>Driving with traffic</label>
+                                <label id="traffic"><input type="radio" name="travel-method" value="driving-traffic" checked><i class="fa-solid fa-traffic-light"></i>Driving with traffic</label>
                                 <label id="car"><input type="radio" name="travel-method" value="driving"><i class="fa-solid fa-car" id="car"></i>Driving</label>
                                 <label id="bike"><input type="radio" name="travel-method" value="cycling"><i class="fa-solid fa-bicycle"></i>Cycling</label>
                                 <label id="walk"><input type="radio" name="travel-method" value="walking"><i class="fa-solid fa-person-walking"></i>Walking</label>
